@@ -19,7 +19,7 @@ import pickle
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score, precision_score, recall_score, f1_score
 
-from utils import *
+from utils import thresh_function, random_mean_oversampling, get_data
 
 def get_model(metrics: list,
               checkpoint_path: str,
