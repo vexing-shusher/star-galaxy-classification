@@ -188,6 +188,9 @@ def model_training(x_train: np.ndarray,
 
     assert os.path.isfile(os.path.join(paths['saved_model_path'],f"{model_name}.h5")), "Saving the model failed miserably!"
     assert os.path.isfile(os.path.join(paths['saved_model_path'],f"{model_name}.pkl")), "Saving the history failed miserably!"
+
+    del model
+    del callbacks
         
     return history
     
@@ -227,5 +230,7 @@ def model_evaluation(x_test: np.ndarray,
     rec = recall_score(y_test, y_pred)
     auc = roc_auc_score(y_test, y_pred)
     f1 = f1_score(y_test, y_pred)
+
+    del model
         
     return (pre, rec, auc, f1)

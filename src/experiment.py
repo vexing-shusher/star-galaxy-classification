@@ -1,6 +1,9 @@
 import os
+import argparse
 import numpy as np
 import pandas as pd
+
+from distutils.util import strtobool
 
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import precision_score, recall_score, auc, f1_score
@@ -65,7 +68,7 @@ def run_experiment(hyperparameters: dict) -> tuple:
     
     return history, prec, rec, auc, f1
 
-def main():
+def main(args):
 
     #HYPERPARAMETERS
     hyperparameters = {
@@ -88,63 +91,60 @@ def main():
     output["rec"] = []
     output["auc"] = []
     output["f1"] = []
-
-    decision_steps = [3, 6, 9, 11, 16] # choose best configuration after <decision_steps> experiments
-
-    experimental_config = [
-        ("backbone_name", "VGG16"),
-        ("backbone_name", "MobileNetV2"),
-        ("backbone_name", "EfficientNetB0"),
-        ("backbone_name", "DenseNet121"),
-        ("trainable_layers", 3),
-        ("trainable_layers", 5),
-        ("trainable_layers", 7),
-        ("optim_name", "Adam"),
-        ("optim_name", "RMSprop"),
-        ("optim_name", "SGD"),
-        ("use_thresholding", False),
-        ("use_thresholding", True),
-        ("beta", 0.),
-        ("beta", 0.9),
-        ("beta", 0.99),
-        ("beta", 0.999),
-    ]
-
-    dec_counter = 0
-    prev_idx = 0
-    best_indices = []
-
-    for n, param in enumerate(experimental_config):
-
-        if n == decision_steps[dec_counter]:
-            # restore best parameters found before
-            best_index = int(np.where(output["f1"] == np.max(output["f1"][prev_idx:]))[0][0])
-            best_indices.append(best_index)
-            for idx in best_indices:
-                best_key, best_val = experimental_config[idx]
-                print(f"Best parameter {best_key}: {best_val}")
-                hyperparameters[best_key] = best_val
-            
-            prev_idx = n + 1
-
-            dec_counter += 1
-
-        key, val = param
-        hyperparameters[key] = val
-
+    
+    if os.path.exists("./all_results.csv"):
+        old_frame = pd.read_csv("./all_results.csv", sep=';', encoding='utf-8')
+        
+        # find best configuration
+        f1s = old_frame["f1"].to_numpy()
+        best_idx = np.where(f1s == f1s.max())[0][0]
+        
+        # set hyperparameters to the best configuration
         for key in hyperparameters:
-            output[key].append(hyperparameters[key])
+            hyperparameters[key] = old_frame[key][best_idx]
+            
+    types_dict = {"int":int, "float":float, "bool":strtobool, "str":str}
+    
+    # set the chosen hyperparameter to the chosen value (allowed types: string, float, int, bool)
+    hyperparameters[args.par_name] = types_dict[args.type](args.par_val)
 
-        history, prec, rec, auc, f1 = run_experiment(hyperparameters)
+    for key in hyperparameters:
+        output[key].append(hyperparameters[key])
+        
+    # run the experiment
+    history, prec, rec, auc, f1 = run_experiment(hyperparameters)
 
-        output["pre"].append(prec)
-        output["rec"].append(rec)
-        output["auc"].append(auc)
-        output["f1"].append(f1)
+    output["pre"].append(prec)
+    output["rec"].append(rec)
+    output["auc"].append(auc)
+    output["f1"].append(f1)
 
     output_frame = pd.DataFrame(data=output)
+    
+    # append the new results to the existing report
+    if os.path.exists("./all_results.csv"):
+        output_frame = pd.concat([old_frame, output_frame], ignore_index=True)
+    
+    # drop extra columns that arise due to concatenation
+    columns_to_drop = [col for col in output_frame.columns if col.split(' ')[0] == "Unnamed:"]
+    output_frame.drop(columns_to_drop, axis=1, inplace=True)
+
     output_frame.to_csv("all_results.csv", sep=';', encoding='utf-8')
     
 if __name__ == "__main__":
-    main()
-    print("The experiments have been finished!")
+    
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--type", 
+                        required=True, 
+                        type=str, 
+                        choices=["int", "float", "bool", "str"])
+    parser.add_argument("--par_name", 
+                        required=True, 
+                        type=str,
+                        choices=["backbone_name", "optim_name", "trainable_layers", "use_thresholding", "beta"])
+    parser.add_argument("--par_val", required=True)
+    
+    args = parser.parse_args()
+    
+    main(args)
+    print("The experiment has been finished!")
