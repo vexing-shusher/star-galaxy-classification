@@ -4,7 +4,7 @@ import tensorflow as tf
 from tensorflow.keras.utils import image_dataset_from_directory
 from tensorflow.keras import layers as tfl
 from tensorflow.keras import Model
-from tensorflow.keras.applications import Xception, EfficientNetB0, DenseNet121, MobileNetV2 
+from tensorflow.keras.applications import VGG16, EfficientNetB0, DenseNet121, MobileNetV2 
 from tensorflow.keras.preprocessing import image
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.optimizers import RMSprop, Adam, SGD
@@ -34,14 +34,14 @@ def get_model(metrics: list,
 
     model_ckpt= ModelCheckpoint(
         checkpoint_path, 
-        monitor='val_auc', 
+        monitor='val_AUC', 
         verbose=0, 
         save_best_only=True,
         mode='max', 
         save_freq='epoch')
     
     reduce_lr = ReduceLROnPlateau(
-        monitor='val_auc', 
+        monitor='val_AUC', 
         factor=0.2,                   
         patience=4, 
         min_lr=0.1*lr)
@@ -56,8 +56,8 @@ def get_model(metrics: list,
     # choose the backbone model
     if backbone_name == "EfficientNetB0":
         backbone = EfficientNetB0(weights=w_init, include_top=False, input_shape=(64,64,3))
-    elif backbone_name == "Xception":
-        backbone = Xception(weights=w_init, include_top=False, input_shape=(64,64,3))
+    elif backbone_name == "VGG16":
+        backbone = VGG16(weights=w_init, include_top=False, input_shape=(64,64,3))
     elif backbone_name == "MobileNetV2":
         backbone = MobileNetV2(weights=w_init, include_top=False, input_shape=(64,64,3))
     elif backbone_name == "DenseNet121":
@@ -205,7 +205,7 @@ def model_evaluation(x_test: np.ndarray,
         p_function = lambda x: x
     
     # load saved model
-    model_name = f'star_galaxy_{exp_name}'
+    model_name = f'star_galaxy_model_{exp_name}'
     model_path = os.path.join(paths['saved_model_path'], f"{model_name}.h5")
     model = tf.keras.models.load_model(model_path)
 
@@ -228,4 +228,4 @@ def model_evaluation(x_test: np.ndarray,
     auc = roc_auc_score(y_test, y_pred)
     f1 = f1_score(y_test, y_pred)
         
-    return (prec, rec, auc, f1)
+    return (pre, rec, auc, f1)

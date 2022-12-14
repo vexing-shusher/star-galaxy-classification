@@ -1,6 +1,6 @@
 import glob
 
-import cv2
+import PIL.Image as pil
 import numpy as np
 
 def thresh_function(img: np.ndarray) -> np.ndarray:
@@ -22,13 +22,13 @@ def get_data(data_path: str) -> tuple:
     print(f"Number of stars: {len(star_files)}")
 
     for x in galaxy_files:
-        image = cv2.imread(x,1)
+        image = pil.open(x)
         image= np.array(image)
         data.append(image)
         labels.append(0)
         
     for x in star_files:
-        image = cv2.imread(x,1)
+        image = pil.open(x)
         image= np.array(image)
         data.append(image)
         labels.append(1)
