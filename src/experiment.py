@@ -18,7 +18,7 @@ def run_experiment(hyperparameters: dict) -> tuple:
 
     for key, value in paths.items():
         if not os.path.exists(value):
-            !mkdir {value}
+            os.mkdir(value)
 
     beta_token = int(hyperparameters["beta"]*100)
     thr_token = str(hyperparameters["use_thresholding"]).lower()
