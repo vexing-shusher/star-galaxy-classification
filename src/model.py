@@ -219,16 +219,16 @@ def model_evaluation(x_test: np.ndarray,
     x_test = np.asarray(x_test, dtype=np.float32)
 
     # get predictions
-    y_pred = model.predict(x_test)
+    y_pred_prob = model.predict(x_test)
 
     # convert from categorical
     y_test = np.argmax(y_test, axis=1)
-    y_pred = np.argmax(y_pred, axis=1)
+    y_pred = np.argmax(y_pred_prob, axis=1)
 
     # compute metrics
     pre = precision_score(y_test, y_pred)
     rec = recall_score(y_test, y_pred)
-    auc = roc_auc_score(y_test, y_pred)
+    auc = roc_auc_score(y_test, y_pred_prob[:,1])
     f1 = f1_score(y_test, y_pred)
 
     del model
